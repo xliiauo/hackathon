@@ -1,0 +1,32 @@
+{
+  "name": "sidekick",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ambient voice + screen sales-meeting copilot (Gemini vision · SLNG voice · Attio MCP)",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "text": "tsx src/index.ts --text",
+    "mock": "MOCK=1 tsx src/index.ts --text",
+    "verify": "tsx scripts/verify.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^2.10.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "boxen": "^8.0.1",
+    "chalk": "^5.6.2",
+    "dotenv": "^17.4.2",
+    "figlet": "^1.11.0",
+    "node-record-lpcm16": "^1.0.1",
+    "screenshot-desktop": "^1.15.4",
+    "sharp": "^0.35.2"
+  },
+  "devDependencies": {
+    "@types/figlet": "^1.7.0",
+    "@types/node": "^26.0.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
