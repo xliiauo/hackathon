@@ -30,16 +30,21 @@ async function handleUtterance(text: string): Promise<void> {
   // Stage 1: cheap trigger gate.
   if (!isActionable(t)) return;
 
-  out.printStatus("Sidekick is checking…");
-  // mic mode → screenshot (read names off screen); text mode → names from the typed transcript.
-  const jpegBase64 = textMode ? undefined : await captureFrame();
-  const ans = await answer({ transcript: transcript.recent(), jpegBase64 });
-  if (!ans) {
-    out.printStatus(textMode ? "(no leads found in that)" : "(nothing actionable on screen)");
-    return;
+  const spinner = out.startThinking();
+  try {
+    // mic mode → screenshot (read names off screen); text mode → names from the typed transcript.
+    const jpegBase64 = textMode ? undefined : await captureFrame();
+    const ans = await answer({ transcript: transcript.recent(), jpegBase64 });
+    if (!ans) {
+      out.thinkingSkipped(spinner, textMode ? "no leads found in that" : "nothing actionable on screen");
+      return;
+    }
+    out.thinkingDone(spinner);
+    out.renderAnswer(ans);
+    await speak(ans.spoken);
+  } catch (e) {
+    out.thinkingFailed(spinner, `error: ${(e as Error).message}`);
   }
-  out.renderAnswer(ans);
-  await speak(ans.spoken);
 }
 
 function startTextMode(): void {

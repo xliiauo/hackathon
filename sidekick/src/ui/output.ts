@@ -1,6 +1,7 @@
 import chalk from "chalk";
 import boxen from "boxen";
 import figlet from "figlet";
+import ora, { type Ora } from "ora";
 import type { AgentAnswer, LeadResult } from "../types";
 
 export function printBanner(): void {
@@ -14,6 +15,26 @@ export function printStatus(msg: string): void {
 
 export function printHeard(text: string): void {
   console.log(chalk.cyan(`\n🗣  ${text}`));
+}
+
+/** Start an animated "thinking" spinner. Caller resolves it via the helpers below. */
+export function startThinking(text = "Sidekick is thinking…"): Ora {
+  return ora({ text: chalk.bold.cyan(text), spinner: "dots", color: "cyan" }).start();
+}
+
+/** Stop the spinner with a green ✔ "completed thinking" state. */
+export function thinkingDone(s: Ora, text = "Completed thinking"): void {
+  s.succeed(chalk.bold.green(text));
+}
+
+/** Stop the spinner with a neutral note (no action taken). */
+export function thinkingSkipped(s: Ora, text: string): void {
+  s.stopAndPersist({ symbol: chalk.dim("•"), text: chalk.dim(text) });
+}
+
+/** Stop the spinner with a red ✖ error state. */
+export function thinkingFailed(s: Ora, text: string): void {
+  s.fail(chalk.red(text));
 }
 
 export function renderAnswer(ans: AgentAnswer): void {
