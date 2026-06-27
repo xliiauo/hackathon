@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import record from "node-record-lpcm16";
+import { config } from "../config";
 
 export interface MicHandlers {
   /** Fired once per detected utterance with its raw 16kHz mono PCM. */
@@ -29,6 +30,8 @@ export function startMic(h: MicHandlers): { stop: () => void } {
     audioType: "raw",
     recorder: "sox",
     threshold: 0, // we do our own silence detection
+    // Selects the sox input device via AUDIODEV; undefined = system default.
+    device: config.micDevice || undefined,
   });
 
   // node-record-lpcm16 spawns `sox`; surface its process errors instead of crashing the app.

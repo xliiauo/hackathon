@@ -102,7 +102,7 @@ function main(): void {
     out.printStatus("`sox` not found — run `brew install sox` to enable voice. Falling back to text mode.\n");
     startTextMode();
   } else {
-    out.printStatus(`Listening on the mic. ${hint} Ctrl-C to quit.\n`);
+    out.printStatus(`Listening on the mic${config.micDevice ? ` — ${config.micDevice}` : " (system default)"}. ${hint} Ctrl-C to quit.\n`);
     startMicMode();
   }
 }

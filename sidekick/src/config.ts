@@ -10,7 +10,7 @@ export const config = {
   slng: {
     apiKey: env.SLNG_API_KEY || "",
     baseUrl: "https://api.slng.ai/v1/bridges/unmute",
-    sttModel: env.SLNG_STT_MODEL || "slng/deepgram/nova:3-en",
+    sttModel: env.SLNG_STT_MODEL || "slng/deepgram/nova:3-multi",
     ttsModel: env.SLNG_TTS_MODEL || "slng/deepgram/aura:2-en",
     ttsVoice: env.SLNG_TTS_VOICE || "aura-2-theia-en",
   },
@@ -24,6 +24,8 @@ export const config = {
     attrStatus: env.ATTIO_ATTR_STATUS || "status", // status; e.g. "Interested" / "Connecting"
   },
   captureDisplay: env.CAPTURE_DISPLAY ? Number(env.CAPTURE_DISPLAY) : undefined,
+  // Audio input device for sox (CoreAudio AUDIODEV). Empty = system default mic.
+  micDevice: env.MIC_DEVICE || "",
   // How many recent utterances to keep as context for the model.
   transcriptWindow: 6,
   // Stage-1 trigger debounce.
