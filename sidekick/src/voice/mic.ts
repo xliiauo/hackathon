@@ -1,9 +1,16 @@
+import { spawnSync } from "node:child_process";
 import record from "node-record-lpcm16";
 
 export interface MicHandlers {
   /** Fired once per detected utterance with its raw 16kHz mono PCM. */
   onUtterance: (pcm: Buffer) => void;
   onError?: (err: Error) => void;
+}
+
+/** True if the `sox` binary is on PATH (required by node-record-lpcm16). */
+export function soxAvailable(): boolean {
+  const r = spawnSync("sox", ["--version"], { stdio: "ignore" });
+  return !r.error;
 }
 
 const THRESHOLD = Number(process.env.MIC_THRESHOLD || 600); // int16 RMS speech/silence cutoff
@@ -23,6 +30,10 @@ export function startMic(h: MicHandlers): { stop: () => void } {
     recorder: "sox",
     threshold: 0, // we do our own silence detection
   });
+
+  // node-record-lpcm16 spawns `sox`; surface its process errors instead of crashing the app.
+  const proc = (rec as { process?: { on?: (ev: string, cb: (e: Error) => void) => void } }).process;
+  proc?.on?.("error", (e: Error) => h.onError?.(e));
 
   let chunks: Buffer[] = [];
   let speaking = false;

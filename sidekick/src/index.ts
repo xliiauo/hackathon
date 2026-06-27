@@ -6,13 +6,13 @@ import { isActionable } from "./core/trigger";
 import { captureFrame } from "./capture/screen";
 import { answer } from "./core/agent";
 import { transcribePcm } from "./voice/stt";
-import { startMic } from "./voice/mic";
+import { startMic, soxAvailable } from "./voice/mic";
 import { speak } from "./voice/tts";
 import { closeAttio } from "./integrations/attio";
 import * as out from "./ui/output";
 
 const transcript = new Transcript(config.transcriptWindow);
-const needsVision = !!config.google.apiKey;
+const needsVision = !!config.google.apiKey && !config.mock;
 // Use mic only when SLNG is configured and --text wasn't passed.
 const textMode = process.argv.includes("--text") || !config.slng.apiKey;
 
@@ -45,14 +45,16 @@ async function handleUtterance(text: string): Promise<void> {
 
 function startTextMode(): void {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: "› " });
+  let closed = false;
   rl.prompt();
   rl.on("line", (line) => {
     enqueue(async () => {
       await handleUtterance(line);
-      rl.prompt();
+      if (!closed) rl.prompt();
     });
   });
   rl.on("close", async () => {
+    closed = true;
     await work;
     await shutdown();
   });
@@ -87,11 +89,16 @@ function main(): void {
   out.printStatus(`voice:  ${config.slng.apiKey ? "SLNG (STT+TTS)" : "text input, no speech (no SLNG_API_KEY)"}`);
   out.printStatus(`attio:  ${useMockAttio ? "MOCK fixtures" : "live MCP"}`);
 
+  const hint = 'Sidekick kicks in when you start with "I forgot…" or "I actually don\'t know…".';
+
   if (textMode) {
-    out.printStatus('Type a question (e.g. "do Alice Chen, Bob Martinez and Carol Nguyen have LinkedIn outbounds?"). Ctrl-C to quit.\n');
+    out.printStatus(`Text mode. ${hint} Ctrl-C to quit.\n`);
+    startTextMode();
+  } else if (!soxAvailable()) {
+    out.printStatus("`sox` not found — run `brew install sox` to enable voice. Falling back to text mode.\n");
     startTextMode();
   } else {
-    out.printStatus("Listening on the mic — speak your question. Ctrl-C to quit.\n");
+    out.printStatus(`Listening on the mic. ${hint} Ctrl-C to quit.\n`);
     startMicMode();
   }
 }

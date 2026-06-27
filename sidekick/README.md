@@ -67,12 +67,18 @@ pnpm text         # type questions instead of speaking
 pnpm mock         # MOCK Attio + text input — zero external deps, deterministic demo
 ```
 
+### Triggering
+
+Sidekick only kicks in when an utterance **opens with a trigger phrase** — by default
+`"I forgot…"` or `"I actually don't know…"`. Everything else is ignored. Override with
+`SIDEKICK_TRIGGERS` (pipe-separated), e.g. `SIDEKICK_TRIGGERS="i forgot|remind me|i can't remember"`.
+
 ### Demo (mock / offline)
 
 ```bash
 pnpm mock
-› do Alice Chen, Bob Martinez and Carol Nguyen have LinkedIn outbounds?
-› which of Alice Chen and Bob Martinez is interested?
+› I forgot if Alice Chen, Bob Martinez and Carol Nguyen have LinkedIn outbounds?
+› I actually don't know which of Alice Chen and Bob Martinez is interested.
 ```
 
 Mock fixtures: Alice (LinkedIn ✓, Interested), Bob (LinkedIn ✓, Not interested), Carol (LinkedIn ✗, Interested).

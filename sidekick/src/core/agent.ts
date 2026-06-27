@@ -19,7 +19,8 @@ const ai = config.google.apiKey ? new GoogleGenAI({ apiKey: config.google.apiKey
  * names found in the transcript (deterministic demo without any external calls).
  */
 export async function answer(input: { jpegBase64: string; transcript: string }): Promise<AgentAnswer | null> {
-  if (!ai) return offlineAnswer(input.transcript);
+  // MOCK or no key → deterministic offline brain (no Gemini call).
+  if (!ai || config.mock) return offlineAnswer(input.transcript);
 
   const tools = [{ functionDeclarations: [lookupLeadsDeclaration, noActionDeclaration] }];
   const userParts = [
