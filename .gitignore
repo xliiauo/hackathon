@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets / env (keep the example template)
+.env
+.env.*
+!.env.example
+
+# Editor / IDE
+.idea/
+.vscode/
+.DS_Store
+
+# Logs & temp audio
+*.log
+sidekick-tts-*.wav
