@@ -223,3 +223,6 @@ sidekick/
 Node · TypeScript · pnpm · `@google/genai` · SLNG · Attio REST · `sox` / `node-record-lpcm16` ·
 `screenshot-desktop` · `sharp` · `ora` · `figlet` · `boxen` · `chalk`.
 
+## Authors
+* Xiao Liu
+* Owen Kosman
