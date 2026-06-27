@@ -51,7 +51,8 @@ screen → screenshot ─────────┘        ↓ yes
 - **SLNG** ([slng.ai](https://slng.ai)) — real-time STT (Deepgram Nova-3) and TTS (Deepgram Aura-2).
 - **Attio** — CRM lookups via REST (`list records` on the `companies` object).
 
-A visual diagram lives in [`docs/architecture.excalidraw`](docs/architecture.excalidraw) (open at [excalidraw.com](https://excalidraw.com)).
+## Architecture Diagram
+![architecture](architecture.png)
 
 ---
 
