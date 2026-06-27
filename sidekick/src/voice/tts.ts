@@ -23,14 +23,31 @@ export async function synthesize(text: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
-/** Speak text aloud via SLNG TTS → WAV → macOS `afplay`. No-op when SLNG isn't configured. */
+/** Speak text aloud via SLNG TTS → (optional sox speed-up) → macOS `afplay`. */
 export async function speak(text: string): Promise<void> {
   if (!config.slng.apiKey || !text.trim()) return;
 
   const audio = await synthesize(text);
-  const file = join(tmpdir(), `sidekick-tts-${process.pid}-${counter++}.wav`);
-  await writeFile(file, audio);
+  const base = join(tmpdir(), `sidekick-tts-${process.pid}-${counter++}`);
+  const raw = `${base}.wav`;
+  await writeFile(raw, audio);
+
+  let file = raw;
+  const speed = config.slng.ttsSpeed;
+  if (speed && speed !== 1) {
+    const fast = `${base}-x${speed}.wav`;
+    if (await tempo(raw, fast, speed)) file = fast; // fall back to raw if sox fails
+  }
   await play(file);
+}
+
+/** Time-stretch a WAV with sox (pitch-preserving). Returns false if sox isn't available/fails. */
+function tempo(input: string, output: string, factor: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const p = spawn("sox", [input, output, "tempo", String(factor)], { stdio: "ignore" });
+    p.on("close", (code) => resolve(code === 0));
+    p.on("error", () => resolve(false));
+  });
 }
 
 function play(file: string): Promise<void> {

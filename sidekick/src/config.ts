@@ -13,6 +13,8 @@ export const config = {
     sttModel: env.SLNG_STT_MODEL || "slng/deepgram/nova:3-multi",
     ttsModel: env.SLNG_TTS_MODEL || "slng/deepgram/aura:2-en",
     ttsVoice: env.SLNG_TTS_VOICE || "aura-2-theia-en",
+    // Playback speed multiplier (pitch-preserving, via sox tempo). 1 = normal, 2 = twice as fast.
+    ttsSpeed: Number(env.SLNG_TTS_SPEED || "2") || 2,
   },
   attio: {
     apiKey: env.ATTIO_API_KEY || "",
