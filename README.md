@@ -15,8 +15,8 @@ off the screen, looks them up in **Attio**, and answers out loud and in the term
       / __/ ___) |
      |_____|____/
 
-╭───────────────── Sidekick ─────────────────╮
-│  2 of 3 have LinkedIn outbounds (Acme and   │
+╭───────────────── Sidekick ───────────────────╮
+│  2 of 3 have LinkedIn outbounds (Acme and    │
 │  Globex); Initech doesn't.                   │
 │                                              │
 │  ✓  Acme Corp — LinkedIn outbound            │
