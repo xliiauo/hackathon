@@ -1,12 +1,4 @@
-# hackathon
-
-Hackathon projects.
-
-An ambient **voice + screen copilot** for sales meetings — it listens, watches your screen, and
-when the team asks about the leads on screen it looks them up in Attio and answers out loud and in
-the terminal. Built on **Gemini** (vision + reasoning), **SLNG** (STT/TTS), and the **Attio** API.
-
-# Sidekick
+# Hackathon: Sidekick
 
 An ambient **voice + screen copilot** for sales meetings. It listens to the conversation,
 watches your screen, and when someone says a trigger word it "kicks in" — reads the lead names
@@ -32,7 +24,6 @@ off the screen, looks them up in **Attio**, and answers out loud and in the term
 │  ✗  Initech — no LinkedIn outbound           │
 ╰──────────────────────────────────────────────╯
 ```
-…then speaks the summary aloud (2× speed).
 
 ---
 
