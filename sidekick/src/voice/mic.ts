@@ -24,6 +24,15 @@ const MAX_UTTERANCE_MS = 15000; // hard flush so we never buffer forever
  * Requires `sox` (`brew install sox`).
  */
 export function startMic(h: MicHandlers): { stop: () => void } {
+  // macOS: tell sox which driver is the default, else it fails with
+  // "no default audio device configured" even though coreaudio is built in.
+  if (process.platform === "darwin" && !process.env.AUDIODRIVER) {
+    process.env.AUDIODRIVER = "coreaudio";
+  }
+
+  // node-record-lpcm16 emits errors as plain strings on non-zero exit — normalize to Error.
+  const onErr = (e: unknown) => h.onError?.(e instanceof Error ? e : new Error(String(e)));
+
   const rec = record.record({
     sampleRate: 16000,
     channels: 1,
@@ -34,9 +43,9 @@ export function startMic(h: MicHandlers): { stop: () => void } {
     device: config.micDevice || undefined,
   });
 
-  // node-record-lpcm16 spawns `sox`; surface its process errors instead of crashing the app.
-  const proc = (rec as { process?: { on?: (ev: string, cb: (e: Error) => void) => void } }).process;
-  proc?.on?.("error", (e: Error) => h.onError?.(e));
+  // Surface the sox process errors instead of crashing the app.
+  const proc = (rec as { process?: { on?: (ev: string, cb: (e: unknown) => void) => void } }).process;
+  proc?.on?.("error", onErr);
 
   let chunks: Buffer[] = [];
   let speaking = false;
@@ -80,7 +89,7 @@ export function startMic(h: MicHandlers): { stop: () => void } {
       if (totalMs >= MAX_UTTERANCE_MS) flush();
     }
   });
-  stream.on("error", (e: Error) => h.onError?.(e));
+  stream.on("error", onErr);
 
   return { stop: () => rec.stop() };
 }
