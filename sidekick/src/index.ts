@@ -93,7 +93,7 @@ function main(): void {
   out.printStatus(`voice:  ${config.slng.apiKey ? "SLNG (STT+TTS)" : "text input, no speech (no SLNG_API_KEY)"}`);
   out.printStatus(`attio:  ${config.attio.apiKey ? `live REST (${config.attio.object})` : "NO ATTIO_API_KEY — lookups will fail"}`);
 
-  const hint = 'Sidekick kicks in when you start with "I forgot…" or "I actually don\'t know…".';
+  const hint = 'Sidekick triggers on "forgot" or "don\'t know".';
 
   if (textMode) {
     out.printStatus(`Text mode. ${hint} Ctrl-C to quit.\n`);

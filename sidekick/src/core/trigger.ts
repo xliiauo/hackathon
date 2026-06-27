@@ -1,19 +1,12 @@
 /**
- * HYBRID stage 1: a cheap, no-LLM gate. Sidekick only "kicks in" when an utterance OPENS with
- * an explicit trigger phrase — by default "I forgot…" or "I actually don't know…". Everything
- * else (chit-chat, statements, other questions) is ignored. Stage 2 (the agent) still makes the
- * final call and can return no_action.
+ * HYBRID stage 1: a cheap, no-LLM gate. Sidekick "kicks in" when an utterance CONTAINS a trigger
+ * word — by default "forgot" or "don't know" (e.g. "I forgot if…", "I actually don't know…").
+ * Everything else is ignored. Stage 2 (the agent) still makes the final call and can return no_action.
  *
- * Override the phrases with SIDEKICK_TRIGGERS (pipe-separated), e.g.
- *   SIDEKICK_TRIGGERS="i forgot|i can't remember|remind me"
+ * Override with SIDEKICK_TRIGGERS (pipe-separated), e.g.
+ *   SIDEKICK_TRIGGERS="forgot|don't know|remind me"
  */
-const DEFAULT_TRIGGERS = [
-  "i forgot",
-  "i actually don't know",
-  "i actually dont know",
-  "i don't know",
-  "i dont know",
-];
+const DEFAULT_TRIGGERS = ["forgot", "don't know", "dont know"];
 
 function normalize(s: string): string {
   return s
@@ -35,8 +28,8 @@ export function isActionable(utterance: string, now: number = Date.now()): boole
   const norm = normalize(utterance);
   if (!norm) return false;
 
-  // Trigger only when the utterance OPENS with one of the trigger phrases.
-  if (!TRIGGERS.some((t) => norm.startsWith(t))) return false;
+  // Trigger when the utterance CONTAINS one of the trigger words.
+  if (!TRIGGERS.some((t) => norm.includes(t))) return false;
 
   // Drop identical repeats within a short window (e.g. STT re-emitting the same line).
   if (norm === lastUtterance && now - lastFiredAt < DEDUP_WINDOW_MS) return false;
