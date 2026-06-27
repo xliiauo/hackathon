@@ -7,29 +7,30 @@ import {
   runLookupLeads,
   type LookupLeadsArgs,
 } from "../tools/lookupLeads";
-import { lookupLeads, MOCK_NAMES } from "../integrations/attio";
 
 const ai = config.google.apiKey ? new GoogleGenAI({ apiKey: config.google.apiKey }) : null;
 
 /**
- * HYBRID stage 2. Given a screenshot + recent transcript, decide whether to look leads up,
- * do it, and return one concise spoken sentence. Returns null for "no action".
+ * HYBRID stage 2. Given the recent transcript (+ a screenshot in mic mode), decide whether to
+ * look leads up, do it against live Attio, and return one concise spoken sentence.
+ * Returns null for "no action".
  *
- * If no Google API key is set, falls back to an offline brain that matches known fixture
- * names found in the transcript (deterministic demo without any external calls).
+ * - mic mode: a screenshot is provided → Gemini reads the lead names off the screen.
+ * - text mode: no screenshot → Gemini takes the lead names from the typed transcript.
  */
-export async function answer(input: { jpegBase64: string; transcript: string }): Promise<AgentAnswer | null> {
-  // MOCK or no key → deterministic offline brain (no Gemini call).
-  if (!ai || config.mock) return offlineAnswer(input.transcript);
+export async function answer(input: { transcript: string; jpegBase64?: string }): Promise<AgentAnswer | null> {
+  if (!ai) throw new Error("GOOGLE_API_KEY not set");
 
   const tools = [{ functionDeclarations: [lookupLeadsDeclaration, noActionDeclaration] }];
-  const userParts = [
-    { inlineData: { mimeType: "image/jpeg", data: input.jpegBase64 } },
+  const parts = [
+    ...(input.jpegBase64 ? [{ inlineData: { mimeType: "image/jpeg", data: input.jpegBase64 } }] : []),
     {
-      text: `Recent meeting transcript (latest last):\n${input.transcript}\n\nLook at the screen and decide.`,
+      text: input.jpegBase64
+        ? `Recent meeting transcript (latest last):\n${input.transcript}\n\nLook at the screen and decide.`
+        : `Recent meeting transcript (latest last):\n${input.transcript}\n\nNo screenshot provided — take the lead names from the transcript.`,
     },
   ];
-  const contents = [{ role: "user", parts: userParts }];
+  const contents = [{ role: "user", parts }];
 
   const first = await ai.models.generateContent({
     model: config.model,
@@ -57,25 +58,6 @@ export async function answer(input: { jpegBase64: string; transcript: string }):
 
   const spoken = second.text?.trim() || summarize(leads, field);
   return { spoken, field, leads };
-}
-
-/**
- * Offline brain: no Gemini. Infer the field and match known fixture names found in the
- * CURRENT question (falling back to the wider transcript only if the line names no one).
- */
-async function offlineAnswer(transcript: string): Promise<AgentAnswer | null> {
-  const lastLine = transcript.split("\n").filter(Boolean).pop() ?? transcript;
-  const scope = lastLine.toLowerCase();
-  const field: Field = /interest/.test(scope) ? "interest_status" : "linkedin_outbound";
-
-  let names = MOCK_NAMES.filter((n) => scope.includes(n.toLowerCase()));
-  if (names.length === 0) {
-    names = MOCK_NAMES.filter((n) => transcript.toLowerCase().includes(n.toLowerCase()));
-  }
-  if (names.length === 0) return null;
-
-  const leads = await lookupLeads(names, field);
-  return { spoken: summarize(leads, field), field, leads };
 }
 
 /** Compose a concise sentence from results (fallback when the model returns no text). */

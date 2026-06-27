@@ -3,11 +3,11 @@ import { writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import sharp from "sharp";
-import { config, useMockAttio } from "../src/config";
+import { config } from "../src/config";
 import { synthesize } from "../src/voice/tts";
 import { transcribeWav } from "../src/voice/stt";
 import { answer } from "../src/core/agent";
-import { lookupLeads, sampleCompanies, closeAttio, MOCK_NAMES } from "../src/integrations/attio";
+import { lookupLeads, sampleCompanies, closeAttio } from "../src/integrations/attio";
 import { captureFrame } from "../src/capture/screen";
 
 function mask(v: string): string {
@@ -52,9 +52,9 @@ async function checkSlng(): Promise<void> {
 }
 
 async function checkAttio(): Promise<string[]> {
-  if (useMockAttio) {
-    bad("Attio REST", "mock mode / no key — using fixtures");
-    return MOCK_NAMES.slice(0, 3);
+  if (!config.attio.apiKey) {
+    bad("Attio REST", "no ATTIO_API_KEY");
+    return [];
   }
   try {
     const sample = await sampleCompanies(3);
@@ -79,20 +79,21 @@ async function checkAttio(): Promise<string[]> {
 }
 
 async function checkGeminiBrain(names: string[]): Promise<void> {
-  if (!config.google.apiKey) return void bad("Gemini brain", "no GOOGLE_API_KEY — app uses offline brain");
-  const leads = names.length ? names.slice(0, 3) : ["Alice Chen", "Bob Martinez", "Carol Nguyen"];
+  if (!config.google.apiKey) return void bad("Gemini brain", "no GOOGLE_API_KEY");
+  if (names.length === 0) return void bad("Gemini brain", "skipped — no Attio names to put on the test screen");
   try {
-    const rows = leads
+    const rows = names
+      .slice(0, 3)
       .map((n, i) => `<text x="40" y="${170 + i * 70}" font-family="Helvetica" font-size="34" fill="black">${i + 1}.  ${escapeXml(n)}</text>`)
       .join("");
-    const svg = `<svg width="1000" height="${180 + leads.length * 70}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><text x="40" y="80" font-family="Helvetica" font-size="40" font-weight="bold" fill="black">Potential customers — this week</text>${rows}</svg>`;
+    const svg = `<svg width="1000" height="${180 + Math.min(names.length, 3) * 70}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="white"/><text x="40" y="80" font-family="Helvetica" font-size="40" font-weight="bold" fill="black">Potential customers — this week</text>${rows}</svg>`;
     const jpeg = await sharp(Buffer.from(svg)).jpeg({ quality: 80 }).toBuffer();
     const imgPath = join(tmpdir(), "sidekick-verify-screen.jpg");
     await writeFile(imgPath, jpeg);
 
     const ans = await answer({
       jpegBase64: jpeg.toString("base64"),
-      transcript: "Let's focus on the LinkedIn outbounds.\nDo all three have LinkedIn outbounds right now?",
+      transcript: "Let's focus on the LinkedIn outbounds.\nI forgot if these have LinkedIn outbounds right now.",
     });
     if (!ans) {
       bad("Gemini brain", `returned no_action (expected a lookup). Test image: ${imgPath}`);
@@ -112,7 +113,7 @@ async function main(): Promise<void> {
   console.log("Keys:");
   console.log(`  GOOGLE_API_KEY : ${mask(config.google.apiKey)}`);
   console.log(`  SLNG_API_KEY   : ${mask(config.slng.apiKey)}`);
-  console.log(`  ATTIO_API_KEY  : ${mask(config.attio.apiKey)}  (mode: ${useMockAttio ? "MOCK" : "LIVE REST"})`);
+  console.log(`  ATTIO_API_KEY  : ${mask(config.attio.apiKey)}  (live REST: ${config.attio.object})`);
   console.log();
 
   await checkScreen();

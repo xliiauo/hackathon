@@ -1,6 +1,6 @@
 import "dotenv/config";
 import readline from "node:readline";
-import { config, useMockAttio } from "./config";
+import { config } from "./config";
 import { Transcript } from "./core/transcript";
 import { isActionable } from "./core/trigger";
 import { captureFrame } from "./capture/screen";
@@ -12,7 +12,6 @@ import { closeAttio } from "./integrations/attio";
 import * as out from "./ui/output";
 
 const transcript = new Transcript(config.transcriptWindow);
-const needsVision = !!config.google.apiKey && !config.mock;
 // Use mic only when SLNG is configured and --text wasn't passed.
 const textMode = process.argv.includes("--text") || !config.slng.apiKey;
 
@@ -28,15 +27,15 @@ async function handleUtterance(text: string): Promise<void> {
   out.printHeard(t);
   transcript.add(t);
 
-  // Stage 1: cheap gate.
+  // Stage 1: cheap trigger gate.
   if (!isActionable(t)) return;
 
   out.printStatus("Sidekick is checking…");
-  const jpeg = needsVision ? await captureFrame() : "";
-  // Stage 2: the model (or offline brain) decides + looks up.
-  const ans = await answer({ jpegBase64: jpeg, transcript: transcript.recent() });
+  // mic mode → screenshot (read names off screen); text mode → names from the typed transcript.
+  const jpegBase64 = textMode ? undefined : await captureFrame();
+  const ans = await answer({ transcript: transcript.recent(), jpegBase64 });
   if (!ans) {
-    out.printStatus("(nothing actionable on screen)");
+    out.printStatus(textMode ? "(no leads found in that)" : "(nothing actionable on screen)");
     return;
   }
   out.renderAnswer(ans);
@@ -85,9 +84,14 @@ async function shutdown(): Promise<void> {
 
 function main(): void {
   out.printBanner();
-  out.printStatus(`vision: ${needsVision ? "Gemini (" + config.model + ")" : "offline name-match (no GOOGLE_API_KEY)"}`);
+
+  if (!config.google.apiKey) {
+    out.printStatus("GOOGLE_API_KEY is required — set it in .env.");
+    process.exit(1);
+  }
+  out.printStatus(`vision: Gemini (${config.model})`);
   out.printStatus(`voice:  ${config.slng.apiKey ? "SLNG (STT+TTS)" : "text input, no speech (no SLNG_API_KEY)"}`);
-  out.printStatus(`attio:  ${useMockAttio ? "MOCK fixtures" : "live MCP"}`);
+  out.printStatus(`attio:  ${config.attio.apiKey ? `live REST (${config.attio.object})` : "NO ATTIO_API_KEY — lookups will fail"}`);
 
   const hint = 'Sidekick kicks in when you start with "I forgot…" or "I actually don\'t know…".';
 

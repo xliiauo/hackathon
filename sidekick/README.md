@@ -5,7 +5,7 @@ watches your screen, and when the team asks about the leads on screen it "kicks 
 the names off the screen, looks them up in **Attio**, and answers out loud and in the terminal.
 
 ```
-🗣  do all three have LinkedIn outbounds right now?
+🗣  I forgot if these have LinkedIn outbounds right now?
 • Sidekick is checking…
 
       ____  ______
@@ -28,15 +28,15 @@ the names off the screen, looks them up in **Attio**, and answers out loud and i
 
 - **Gemini** (`@google/genai`) — vision (reads names off the screenshot) + reasoning + function-calling.
 - **SLNG** ([slng.ai](https://slng.ai)) — real-time **STT** (listen) and **TTS** (speak).
-- **Attio MCP** — CRM lookups (LinkedIn-outbound presence, interest/status).
+- **Attio** (REST API) — live CRM lookups (LinkedIn-outbound presence, interest/status).
 - Node + TypeScript CLI. Big terminal output via figlet/boxen.
 
 ## Architecture
 
 ```
 mic → SLNG STT → transcript ─┐
-                             ├─ stage 1: keyword gate → stage 2: Gemini confirms (sees screenshot)
-screen → screenshot (on cue)─┘        → lookup_leads(names, field) → Attio MCP → per-lead data
+                             ├─ stage 1: trigger-phrase gate → stage 2: Gemini confirms (sees screenshot)
+screen → screenshot (on cue)─┘        → lookup_leads(names, field) → Attio REST → per-lead data
                                       → one spoken sentence → terminal + SLNG TTS
 ```
 
@@ -51,20 +51,17 @@ cp .env.example .env        # then fill in keys
 macOS: grant your terminal **Microphone** and **Screen Recording** permission
 (System Settings ▸ Privacy & Security).
 
-### Keys (all optional — it degrades gracefully)
+### Keys
 
-| Env | Without it |
-|-----|------------|
-| `GOOGLE_API_KEY` | falls back to an offline name-matching brain (no live vision) |
-| `SLNG_API_KEY` | runs in `--text` mode, no speech in/out |
-| `ATTIO_API_KEY` | uses built-in MOCK fixtures (Alice/Bob/Carol) |
+- `GOOGLE_API_KEY` — **required** (vision + reasoning).
+- `ATTIO_API_KEY` — **required** for lookups (read-only key is fine).
+- `SLNG_API_KEY` — optional; without it Sidekick runs in `--text` mode with no speech.
 
 ## Run
 
 ```bash
-pnpm dev          # full: mic + voice + (Gemini if key) + (Attio if key)
-pnpm text         # type questions instead of speaking
-pnpm mock         # MOCK Attio + text input — zero external deps, deterministic demo
+pnpm dev          # mic + voice (SLNG) + Gemini vision + live Attio
+pnpm text         # type questions instead of speaking (names taken from what you type)
 ```
 
 ### Triggering
@@ -73,15 +70,15 @@ Sidekick only kicks in when an utterance **opens with a trigger phrase** — by 
 `"I forgot…"` or `"I actually don't know…"`. Everything else is ignored. Override with
 `SIDEKICK_TRIGGERS` (pipe-separated), e.g. `SIDEKICK_TRIGGERS="i forgot|remind me|i can't remember"`.
 
-### Demo (mock / offline)
+### Keyboard testing (real Attio)
+
+In `--text` mode the lead names are taken from what you type and looked up **live in Attio**:
 
 ```bash
-pnpm mock
-› I forgot if Alice Chen, Bob Martinez and Carol Nguyen have LinkedIn outbounds?
-› I actually don't know which of Alice Chen and Bob Martinez is interested.
+pnpm text
+› I forgot if <Company A> and <Company B> have LinkedIn outbounds?
+› I actually don't know if <Company A> is interested.
 ```
-
-Mock fixtures: Alice (LinkedIn ✓, Interested), Bob (LinkedIn ✓, Not interested), Carol (LinkedIn ✗, Interested).
 
 ## Live Attio notes
 

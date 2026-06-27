@@ -24,23 +24,20 @@ export const config = {
     attrStatus: env.ATTIO_ATTR_STATUS || "status", // status; e.g. "Interested" / "Connecting"
   },
   captureDisplay: env.CAPTURE_DISPLAY ? Number(env.CAPTURE_DISPLAY) : undefined,
-  mock: env.MOCK === "1" || env.MOCK === "true",
   // How many recent utterances to keep as context for the model.
   transcriptWindow: 6,
   // Stage-1 trigger debounce.
   triggerDebounceMs: 800,
 } as const;
 
-/** Whether Attio runs against built-in fixtures rather than the live MCP server. */
-export const useMockAttio = config.mock || !config.attio.apiKey;
-
 export const SYSTEM_INSTRUCTION = `You are Sidekick, an ambient copilot in a live sales planning meeting.
-You receive a screenshot of the user's screen plus the recent meeting transcript.
-The screen shows a list of leads / contacts / companies.
+You receive the recent meeting transcript and, when available, a screenshot of the user's screen
+showing a list of leads / contacts / companies.
 
 WHEN THE SPEAKERS ASK ABOUT THOSE LEADS — e.g. whether they have LinkedIn outbounds,
-or whether they are interested — read the relevant names DIRECTLY FROM THE SCREENSHOT
-and call \`lookup_leads\` with those exact names and the requested field:
+or whether they are interested — read the relevant names from the screenshot (or, if no
+screenshot is provided, from the transcript) and call \`lookup_leads\` with those exact names
+and the requested field:
 - "linkedin_outbound" for questions about LinkedIn outreach / outbounds / whether we've reached out.
 - "interest_status" for questions about who is interested / their status.
 
@@ -50,7 +47,7 @@ OTHERWISE call \`no_action\`. Specifically call \`no_action\` when:
 - the question is not about the on-screen leads.
 
 RULES:
-- NEVER invent names. Use only names visible in the screenshot.
+- NEVER invent names — use only names present in the screenshot or the transcript.
 - Pick the names actually being discussed (e.g. "these three", "the two left").
 - After the lookup returns, reply with ONE short, spoken-style sentence summarizing the
   answer, naming the leads. Example: "Two of the three have LinkedIn outbounds — Alice and
